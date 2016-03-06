@@ -1,0 +1,1254 @@
+
+Applied Bioinformatics 852, Code Repository, 2015 Summer
+Unit 1
+Section 1: Basic Command Line
+
+# Lines that start with the # sign are comments that won't be executed!
+
+# What folder are we in
+pwd
+
+# Make a directory
+mkdir work
+
+# See the directory
+ls
+
+# See more details
+ls -l
+
+# Change to the work directory
+cd work
+
+# Where am I
+pwd
+
+# Let's go back one level
+cd ..
+
+# Where am I
+pwd
+
+# Remove the directory
+rmdir work
+
+# Create a file, then list it.
+touch abc.txt
+
+# Rename (move the file)
+mv abc.txt xyz.txt
+
+# How does the mv command work?
+man mv
+
+# Learn about cp, ls, mv, rm, mkdir, rmdir
+# via the manual pages
+man ls
+
+Section 2: Simple Data Manipulations
+
+# Lines that start with the # sign are comments that won't be executed!
+
+# Get the data from SGD.
+# Download the URL with curl and store it in the sc.gff file.
+curl http://downloads.yeastgenome.org/curation/chromosomal_feature/saccharomyces_cerevisiae.gff -o sc.gff
+
+#
+# Or if the site seems slow get the data from the course site. But then ask yourself
+# isn't it odd when a class website is faster than the official data repository? Way to go SGD!
+#
+# curl http://www.personal.psu.edu/iua1/courses/files/2014/data/saccharomyces_cerevisiae.gff -o sc.gff
+
+# How many lines does the file have.
+wc -l sc.gff
+
+# Page through the file with more (or less)
+# SPACE and f moves forward, b moves backward, q quits, h help, / allows you to search
+more sc.gff
+
+# Let's look at the head of the file.
+head sc.gff
+
+# And the end of the file.
+tail sc.gff
+
+# Find simple patterns in the file
+grep YAL060W sc.gff
+
+# We can place the results of the matching into a new file.
+grep YAL060W sc.gff > match.gff
+
+# Look at your files.
+ls
+
+# Paginate the match file
+head match.gff
+
+# Piping (chaining) commands together.
+# How many lines match the word gene?
+grep gene sc.gff | wc -l
+
+# How many lines match both the word gene and the word chrVI (chromosome six)?
+grep gene sc.gff | grep chrVI | wc -l
+
+# How many lines of the above DO NOT match the word Dubious?
+grep gene sc.gff | grep chrVI | grep -v Dubious | wc -l
+
+# This file is a bit odd. It contains two sections, a tabular
+# section with 9 tab delimited columns and a sequence section
+# that lists the entire genome.
+
+# Break up the file into two parts. Put all lines that occur before
+# the genome  information into features.gff.
+# Our spies from behind enemy lines have reported that the word FASTA
+# in the file indicates that the genome information is about to start
+cat -n sc.gff | head
+
+# Find the position of the word FASTA in the file. The -n flag adds line numbers.
+cat -n sc.gff | grep FASTA
+
+# Keep only those number of lines and redirect into a new file that
+# contains only the features. Also remove the comment characters from the file.
+head -22994 sc.gff | grep -v '#' > features.gff
+
+# We did all this work to have simple tabular formatted data that only
+# contains columnar information. So how many features are there?
+wc -l features.gff
+
+# Take the first three columns.
+cut -f 1,2,3 features.gff | head
+
+# Find unique words in column 3 of GFF.
+# The uniq command collapses consecutive identical words into one.
+cut -f 3 features.gff | sort | uniq | head
+
+# It can also count how many identical consecutive words are there.
+cut -f 3 features.gff | sort | uniq -c | head
+
+Unit 2
+Section 3: Installing and Using Entrez Direct
+
+# Installing and running the Entrez Direct suite
+
+# Go to your home directory.
+cd
+
+# Equivalent to using ~/ that represents your home directory.
+cd ~/
+
+# Create an src directory that will contain the
+# programs we will install during this lecture.
+mkdir ~/src
+
+# go to the src directory
+cd ~/src
+
+# Get the entrez direct toolkit, the capital -O flag instructs curl
+# to figure out the filename from the url.
+curl ftp://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/edirect.zip -O
+
+# The above is equivalent to:
+curl ftp://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/edirect.zip -o edirect.zip
+
+# Unzip the tools.
+unzip edirect.zip
+
+# Investigate the new tool.
+cd edirect
+ls
+
+# To make your system become aware of where
+# your new tools are you need to add the path to
+# the tool to your environment. There are different
+# ways to do this. To add all tools at once add to the PATH variable.
+export PATH=$PATH:~/src/edirect
+
+# Create the work folder for the current section.
+mkdir -p ~/edu/sec3
+cd  ~/edu/sec3
+pwd
+
+# Run einfo
+einfo -help
+
+# Fetch descrptions then look at them.
+einfo -dbs > einfo-dbs.txt
+more einfo-dbs.txt
+
+einfo -db sra > einfo-sra.txt
+more einfo-sra.txt
+
+# Run an esearch.
+esearch -help
+esearch -db nucleotide -query PRJNA257197
+esearch -db sra -query PRJNA257197
+esearch -db protein -query PRJNA257197
+
+# Fetch the data for nucleotides.
+esearch -db nucleotide -query PRJNA257197 | efetch -format fasta > ebola.fasta
+
+# How many sequences in the file
+cat ebola.fasta | grep ">" | wc -l
+
+# Get the data in genbank format.
+esearch -db nucleotide -query PRJNA257197 | efetch -format gb > ebola.gb
+
+Section 4: Installing and Using the SRA tookit
+
+# Go to your source directory.
+cd ~/src
+
+# Download the SRA toolkit (make sure to put the link that is relevant to your platform)
+#
+# Mac OSX.
+#
+curl -O http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.3.5-2/sratoolkit.2.3.5-2-mac64.tar.gz
+
+# Linux.
+curl -O http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.3.5-2/sratoolkit.2.3.5-2-ubuntu64.tar.gz
+
+# Unpack the archive.
+tar xzvf sratoolkit.2.3.5-2-mac64.tar.gz
+
+# Switch to the directory and look at the files there
+cd sratoolkit.2.3.5-2-mac64
+
+# Programs are collected in the bin directory.
+cd bin
+
+# See what is there.
+ls
+
+# Let's add these paths permanently to our PATH.
+
+# There is a special file that is read when your shell starts. It applies
+# the settings to each terminal that you start. The file is called ~/.profile
+# on a Mac and ~/.bashrc on linux. The >> symbol appends to a file rather than
+# overwriting it. You may also edit this file with a text editor.
+
+# On the Mac:
+echo export PATH=$PATH:~/src/edirect:~/src/sratoolkit.2.3.5-2-mac64/bin >> ~/.profile
+
+# On Linux:
+echo export PATH=$PATH:~/src/edirect:~/src/sratoolkit.2.3.5-2-mac64/bin >> ~/.bashrc
+
+# You need to open a new terminal to apply the settings or do:
+source ~/.profile
+
+# Go to the section folder. What does the -p flag do? Look at the manual page.
+mkdir -p ~/edu/sec4
+cd ~/edu/sec4
+
+# Where is the prefetch command?
+which prefetch
+
+# The prefetch command download files from the remote site.
+# Look the help for the file.
+prefetch -h
+
+# Now let's obtain the file.
+prefetch SRR1553610
+
+# Where did the file go? There is a default folder in your home directory.
+ls ~/ncbi
+
+# What files have been added there? Use the find tool.
+find ~/ncbi
+
+# We unpack the file with the fastq-dump program.
+fastq-dump -h
+
+# Unpack the file
+fastq-dump --split-files SRR1553610
+
+# The raw data files in FASTQ format are in the current folder.
+ls
+
+# Pattern matching in the shell. The * (star) indicates match anything.
+wc -l *.fastq
+
+# look at the file.
+head SRR1553610_1.fastq
+
+#
+cat *.fastq | grep @SRR | wc -l
+
+# How to download multiple files? Create a file that contains SRR runs.
+echo SRR1553608 > sra.ids
+echo SRR1553605 >> sra.ids
+
+# look at the file
+cat sra.ids
+
+# Use this file to prefetch the runs.
+prefetch --option-file sra.ids
+
+# Unpack all the downloaded files. Note how this is not quite right since
+# there may be more prefetched files than what we had in sra.ids
+fastq-dump --split-files ~/ncbi/public/sra/SRR15536*
+
+Unit 3
+Section 5: Advanced use of Entrez Direct
+
+#
+# Advanced use of Entrez Direct (optional section)
+#
+
+# Get a sequence by locus.
+efetch -db nucleotide -id KM233090 -format fasta > KM233090.fa
+
+# The same sequence is also available by accession number.
+efetch -db nucleotide -id 667853062 -format fasta > 667853062.fa
+
+# One can fetch multiple ids at the same time
+efetch -db nucleotide -id KM233090,KM233066,KM233113.1 -format fasta > multi.fa
+
+# How many lines in the file
+wc -l multi.fa
+
+# Count the header files.
+cat multi.fa | grep ">" | wc -l
+
+# See the header files.
+cat multi.fa | grep ">"
+
+# We can also fetch a subset from the sequences.
+efetch -db nucleotide -id KM233090,KM233066,KM233113.1 -format fasta -seq_start 1 -seq_stop 10 > multi.fa
+
+# Let's get the start of all ebola genomic builds.
+esearch -db nucleotide -query PRJNA257197 | efetch -db nucleotide -format fasta -seq_start 1 -seq_stop 10 > starts.fa
+
+# This is too much to type at each time. Time to solve it
+# at a higher level. Start to write shell scripts.
+# A shell script is a collection of commands that we can
+# repeatedly execute.
+# Put the line below into a file, usually the extension is .sh, I'll call it get_seq.sh
+# esearch -db nucleotide -query PRJNA257197 | efetch -db nucleotide -format fasta -seq_start 1 -seq_stop 10
+
+# You can now run this entire command from a single script.
+bash get_seq.sh > starts.fa
+
+# What would be nice is to be able to specify some parts of this script from the outside.
+# The two dollar signs will be substituted with the parameters from command line. See the
+# included files below.
+bash get_seq.sh 1 10 > starts.fa
+
+# Now extract just the sequences from this file.
+# the -A 1 flag prints the match and the one line after the match.
+# The -v flag prints lines that do not match the pattern.
+# Never type these in directly. Type one statement, check the results, type a second one and so on.
+cat starts.fa | grep ">" -A 1 | grep -v ">" | grep -v "-"
+
+Section 6: FastQC Quality control
+
+# Quality control.
+# Download and install FastQC into the src directory.
+cd ~/src
+curl -O http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.2.zip
+
+# Linux people: do an: sudo apt-get install unzip
+unzip fastqc_v0.11.2.zip
+cd FastQC
+ls -l
+
+# There is an error in the distribution. The executable flag is not set.
+chmod +x fastqc
+
+# We want fastqc to be globally available. We have two ways to do this. We could
+# add the path to the library to the main PATH (as before), but that gets old when you
+# have to add every single program and reload the PATH.
+# Alternatively we could add one directory say ~/bin then create links (shortcuts)
+# in this directoy to the programs that we want to be available globally.
+
+# Create the ~/bin directory
+mkdir -p ~/bin
+
+# Add the ~/bin folder into the PATH
+
+# On a Mac:
+echo 'export PATH=~/bin:$PATH' >> ~/.profile
+# to apply to the current shell not just future ones:
+source ~/.profile
+
+# Under Linux do the following:
+# echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
+# source ~/.bashrc
+
+# Link the fastqc under a "shortcut" in ~/bin
+ln -s ~/src/FastQC/fastqc ~/bin/fastqc
+
+# Test that the tool works.
+# Linux people may need to install java.
+# See the linux install guide: http://www.personal.psu.edu/iua1/courses/code-repository-2014.html#chromebook
+#
+fastqc -h
+
+# Use prefetch if you want to keep the SRA files.
+# Otherwise you can use fastq-dump directly.
+mkdir ~/edu/sec6
+cd ~/edu/sec6
+fastq-dump --split-files SRR519926
+
+# Run a fastqc report on all files in the directory.
+fastqc *.fastq
+
+# This will create *.html files. Open and investigate the outputs.
+
+Unit 4
+Section 7: Running quality control tools
+
+# Install two different tools: prinseq and trimmomatic
+
+# Download and unpack the software in your src directory
+cd ~/src
+
+#
+# Install the prinseq tool. URL: http://prinseq.sourceforge.net/
+#
+# We need to also pass the -L flag to curl since this site uses link redirects and
+# we want to follow those
+#
+curl -OL http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz
+
+# Unpack the archive.
+tar zxvf prinseq-lite-0.20.4.tar.gz
+
+# Go into the archive and read the instructions
+# located in the README file. Let's follow what it says there.
+cd prinseq-lite-0.20.4
+
+# Make the script executable.
+chmod +x prinseq-lite.pl
+
+# Link it into you ~/bin folder.
+ln -s ~/src/prinseq-lite-0.20.4/prinseq-lite.pl ~/bin/prinseq-lite
+
+# Now you have prinseq running anywhere on your system.
+prinseq-lite
+
+#
+# Installing and using trimmomatic. URL: http://www.usadellab.org/cms/?page=trimmomatic
+#
+cd ~/src
+curl -O http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip
+unzip Trimmomatic-0.32.zip
+cd Trimmomatic-0.32
+
+# Alas not much information is there. You got to hit the manual at:
+# http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
+# It has a really user unfriendly way to run it. Thanks a bunch!
+java -jar trimmomatic-0.32.jar
+
+# Lets make a script that lauches that for us.
+# Create a script with Komodo or from the command line that contains the following
+# shown below
+
+# You can also do it from the command line
+echo '#!/bin/bash' > ~/bin/trimmomatic
+echo 'java -jar ~/src/Trimmomatic-0.32/trimmomatic-0.32.jar $@' >> ~/bin/trimmomatic
+chmod +x ~/bin/trimmomatic
+
+# Look Ma! It works.
+trimmomatic
+
+# Now we have both prinseq and trimmomatic. Let's use them.
+fastq-dump --split-files SRR519926
+
+# Run prinseq and trim bases from the right in a window of 5 bases
+prinseq-lite -fastq SRR519926_1.fastq -trim_qual_right 30 -trim_qual_window 4 -min_len 35 -out_good prinseq_1
+
+# Trimmomatic uses a different set of paramters and philosophy. Parameters need to be space separated words
+# where the sub-parameters  are separated by a colon. Basically they invented their own parameter formats.
+trimmomatic SE -phred33 SRR519926_1.fastq trimmomatic_1.fq SLIDINGWINDOW:4:30 MINLEN:35 TRAILING:3
+
+# Time the execution speed for both tools. Note just how radically faster trimmomatic is.
+# Depending on the operation it could be 100x faster.
+# On the other hand prinseq is more than just a quality control tool, it has
+# a whole slew of other functionality.
+fastqc SRR519926_1.fastq prinseq_1.fq trimmomatic_1.fq
+
+# By default FastQC creates bins in the plots and that may sometimes
+# hide details.
+fastqc --nogroup SRR519926_1.fastq prinseq_1.fq trimmomatic_1.fq
+
+The Trimmomatic shell script:
+
+#!/bin/bash
+
+# The line above tells the shell to execute the program with bash.
+# The line below the $@ indicates passing all arguments into the program
+
+java -jar ~/src/Trimmomatic-0.32/trimmomatic-0.32.jar $@
+
+Unit 6
+Section 8: Install and run BLAST
+
+#
+# Get and install BLAST+
+#
+# URLs given for a MAC, change it accordingly for Linux
+
+# Switch to the src folder
+cd ~/src
+
+# Check the latest version of blast+
+# Visit ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
+# take note of the numbering of the latest version
+# Get the blast executable for the Mac
+
+curl -O  ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.2.31+-universal-macosx.tar.gz
+tar zxvf ncbi-blast-2.2.31+-universal-macosx.tar.gz
+
+# For Linux download a different package
+# curl -O ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.2.31+-x64-linux.tar.gz
+# tar zxvf ncbi-blast-2.2.31+-x64-linux.tar.gz
+
+# I can either link the executable or add the entire directory to
+# my path. When there are lots of programs I usually add the entire
+# directory.
+
+echo 'export PATH=$PATH:~/src/ncbi-blast-2.2.31+/bin' >> ~/.profile
+
+# Or on Linux do a
+# echo 'export PATH=$PATH:~/src/ncbi-blast-2.2.31+/bin' >> ~/.bashrc
+
+# Load the settings into the current terminal (new terminals will auto load this)
+source ~/.profile
+
+# Check that it works. Short help.
+blastn -h
+
+# Long help.
+blastn -help
+
+# Checklist:
+#   1. What are we looking to find? -> query sequence
+#   2. Where are we looking for? -> database -> target sequence(s)
+#   3. How are we looking for it? -> search type
+
+# Let's make a blast database
+
+# Get a genome sequence of the Ebola virus
+# When we index databases it may create more files. It is
+# best if we place these in a separate folder. Lets call that refs.
+mkdir -p refs
+efetch -db nucleotide -id KM233118 --format fasta > KM233118.fa
+
+# The reference may contain one or more Fasta records. To
+# turn it into a blast database we need to transform it to a
+# format the program is able to operate on.
+
+# Long and short help for the blast database indexer.
+makeblastdb -h
+makeblastdb -help
+
+# Create a nucleotide database out of the genome.
+makeblastdb -in KM233118.fa -dbtype nucl
+
+# See what happened.
+ls refs
+
+# Create a query.
+head -2 ~/refs/KM233118.fa > query.fa
+
+# Search with the query: nucleotide sequence vs nucleotide database
+# Take note of the formats.
+blastn -db ~/refs/KM233118.fa -query query.fa | more
+
+# We can change the output format. Tabular forms
+# can be used when base by base alignment information is not needed.
+blastn -db ~/refs/KM233118.fa -query query.fa -outfmt 6
+
+# This will also write header information.
+blastn -db ~/refs/KM233118.fa -query query.fa -outfmt 7
+
+# You may format the output in very different ways.
+blastn -db ~/refs/KM233118.fa -query query.fa -outfmt '6 qseqid sseqid qlen length mismatch'
+
+# By default blastn uses the megablast search strategy.
+# Shorten the query to:
+# >short
+# AATCATACCTGG
+
+# There are different search strategies/tasks for blast.
+# These represent a pre-packaged set of parameters.
+blastn -db ~/refs/KM233118.fa -query query.fa
+
+blastn -db ~/refs/KM233118.fa -query query.fa -task blastn
+
+#
+# Make the sequence even shorter.
+# >short
+# AATCATA
+#
+# Now -task blastn won't work either, there is another task blastn-short
+# Tuning Blast can be a little world on its own.
+#
+blastn -db ~/refs/KM233118.fa -query query.fa -task blastn-short
+
+# You can have more than one sequence in the target database.
+esearch -db nucleotide -query PRJNA257197 | efetch -db nucleotide -format fasta > ~/refs/all-genomes.fa
+
+# Create the blast database of all genomes.
+makeblastdb -in ~/refs/all-genomes.fa -dbtype nucl
+
+# Search all genomes for your query.
+blastn -db ~/refs/all-genomes.fa -query query.fa -task blastn -outfmt 7
+
+Section 9: Advanced use of BLAST (optional)
+
+#
+# The 1976 Ebola bioproject ID: PRJNA14703
+#
+# Genbank id: NC_002549.1
+# Nucleoprotein: NP_066243.1
+#
+
+#
+# The 2014 Ebola bioproject ID: PRJNA257197
+#
+
+# 1. get all peptides from 2014 ebola project
+# 2. create a blast database from these peptides
+# 3. get the peptide for the 1976 protein
+# 4. search the 1976 peptides and compare to
+# the new peptides
+
+# 1. and 2 can be solved with efetc
+# 3. run and interpret BLAST results.
+
+# Fetch all 2014 peptides from GenBank
+esearch -query PRJNA257197 -db protein | efetch -format fasta > all-peptides.fa
+
+# Reorganize and move to a better name
+mv all-peptides.fa ebola-2014-proteins.fa
+mkdir blastdb
+mv ebola-2014-proteins.fa blastdb/
+
+# Go to the blast directory
+cd blastdb
+
+# Create the blast database
+makeblastdb -in ebola-2014-proteins.fa -dbtype prot -parse_seqids
+
+# Go back one level
+cd ..
+
+# Get the nucleoprotein
+efetch -id NP_066243 -format fasta -db protein > NP_066243.fa
+
+# BLASTP protein-protein search
+
+# qacc, sacc, qlen, length, pident, btop
+blastp -db blastdb/ebola-2014-proteins.fa -query NP_066243.fa -outfmt "7 qacc sacc qlen length pident btop" > results.txt
+
+Unit 7
+Section 10: Installing and running BWA. The SAM format.
+
+#
+# Obtain and install bwa
+#
+
+#
+# Go to your source directory
+#
+cd ~/src
+
+#
+# Get BWA from the remote repository
+#
+curl -OL http://downloads.sourceforge.net/project/bio-bwa/bwa-0.7.12.tar.bz2
+
+#
+# It is compressed with bzip2 so use the -j flag to uncompress.
+#
+tar jxvf bwa-0.7.12.tar.bz2
+
+#
+# We need to compile the program
+#
+cd bwa-0.7.12/
+
+#
+# Type make
+#
+make
+
+# You now have bwa installed. Link it to the bin folder.
+ln -s ~/src/bwa-0.7.12/bwa ~/bin
+
+# Check that it works. Now we are ready to move to mapping.
+bwa
+
+#
+# Get the ebola genome for the 1977 outbreak.
+# Note how I am putting it into the ~/refs folder
+#
+efetch -db nucleotide -id NC_002549 -format fasta > ~/refs/ebola-1976.fa
+
+#
+# We need to index the genome to make it accessible for bwa
+#
+bwa index ~/refs/ebola-1976.fa
+
+#
+# Create a directory for section 10.
+#
+# cd ~/edu/
+# mkdir sec10
+#
+
+#
+# Create a query by taking the first two line of the reference file.
+#
+head -2 ~/refs/ebola-1976.fa > query.fq
+
+
+#
+# Edit the query to contain more than one sequence.
+# Modify the sequences but keep in mind to keep the
+# quality string the same length as the sequence.
+#
+# Use the Sequence Manipulation Suite to reverse complement the sequence.
+# http://www.bioinformatics.org/sms2/
+#
+
+#
+# Run the bwa short read aligner
+#
+bwa mem ~/refs/ebola-1976.fa query.fq
+
+#
+#
+# Run the aligner and put the results into a file
+#
+bwa mem ~/refs/ebola-1976.fa query.fq > results.sam
+
+#
+# Investigate the results file.
+#
+cat results.sam | cut -f 1
+
+Unit 8
+Section 11: The SAM and BAM files.
+
+#
+# Find variations in the new ebola virus sequence
+#
+
+#
+# Typically before embarking on a study we need to install software for it.
+#
+
+#
+# First we need a tool to process SAM files. It is called SAMTOOLS.
+#
+# Go to the source directoy.
+cd ~/src
+
+# Get the code from its location.
+curl -OL https://github.com/samtools/samtools/releases/download/1.2/samtools-1.2.tar.bz2
+
+# Unpack the code.
+tar jxvf samtools-1.2.tar.bz2
+
+# Go to the code source.
+cd samtools-1.2
+
+# Make the file.
+make
+
+# Link the code to be globally available.
+ln -s ~/src/samtools-1.2/samtools ~/bin/samtools
+
+# You should now have samtools installed.
+# Run the software to test that it has been installed properly
+samtools
+
+#
+# Now we can move onto the project itself.
+#
+#
+# Obtain dataset for one sequencing run.
+#
+# Visit the BioProject for the ebola data:
+#
+# http://www.ncbi.nlm.nih.gov/bioproject/PRJNA257197/
+#
+
+#
+# Pick a sequencing experiment that you want to investigate.
+#
+# While preparing this presentation I made an interesting discovery. See here:
+# Biostars: How to find the mapping percentages for data deposited in the Zaire ebolavirus bioproject from the 2014 outbreak
+#
+# https://www.biostars.org/p/146816/
+#
+# Not all datasets contain valid data. Let's pick datasets that contain Ebola isolates.
+# See the Biostars post.
+#
+# Examples: SRR1553425, SRR1553499, SRR1553479, SRR1553480, SRR1553487, SRR1553500.
+#
+
+#
+# Create a folder to store the data in
+#
+cd ~/edu
+mkdir sec11
+cd sec11
+
+# Put the data into a subfolder as there will be many files associated with it
+mkdir data
+cd data
+
+#
+# Get the data. The -X flag can limit the amount of data
+# that you could download. I am getting 1 million reads here.
+#
+fastq-dump SRR1553425 -X 100000 --split-files
+
+#
+# Look at the data that you got.
+#
+ls
+ls -l
+
+#
+# Evaluate the quality of this run.
+#
+fastqc *.fastq
+
+#
+# Depending on the situation we may need to clean it up.
+#
+trimmomatic PE -baseout trimmed.fq SRR1553425_1.fastq SRR1553425_2.fastq  SLIDINGWINDOW:4:30 MINLEN:35 TRAILING:3
+#
+
+#
+# Generate FastQC reports on the trimmed data.
+#
+fastqc *.fq
+
+# Go to the subfolder instead of the data folder.
+cd ~/edu/sec11
+
+#
+# Run the aligner to generate the SAM file.
+#
+# This time we run it in paired end mode.
+#
+bwa mem ~/refs/ebola-1976.fa data/trimmed_1P.fq data/trimmed_2P.fq > results.sam
+
+#
+# Now we need to turn the SAM file into a BAM file.
+#
+# The "tyranny of the genius" is strong with this one.
+#
+
+#
+# First we convert to a temporary BAM file.
+#
+samtools view -Sb results.sam > temp.bam
+
+#
+# We then need to sort the BAM file
+#
+# This creates the results.bam file
+#
+samtools sort -f temp.bam results.bam
+
+# Index the results.bam file.
+samtools index results.bam
+
+#
+# The results.bam and its index results.bam.bai files are the
+# final results of the mapping. All analyses will be performed on
+# these files.
+#
+
+#
+# Use IGV to display your BAM file. You will need to create a
+# custom genome with IGV first. Visualize the alignments with IGV.
+#
+
+# Follow the video to create a custom reference genome and gene file.
+
+#
+# Try to find a few genome variations by eye. What do you see?
+#
+
+Unit 9
+Section 12: Variant Calling: VCF and BCF formats
+
+#
+# Produce a VCF file from variations in the ebola virus sequence
+# from the command line.
+#
+
+#
+# We will need to install the BCF tools package.
+#
+# Go to the source directoy.
+cd ~/src
+
+# Get the code from its location.
+curl -OL https://github.com/samtools/bcftools/releases/download/1.2/bcftools-1.2.tar.bz2
+
+# Unpack the code.
+tar jxvf bcftools-1.2.tar.bz2
+
+# Go to the code source.
+cd bcftools-1.2
+
+# Make the file.
+make
+
+# Link the code to be globally available.
+ln -sf ~/src/bcftools-1.2/bcftools ~/bin/bcftools
+
+# Run the tool to ensure that the installation worked
+bcftools
+
+#
+# Continue on with the bam file that we created in the previous lecture.
+# You may have two files one created with bwa aligner,
+# the other created with CLC genomics workbench. Use whichever you want to.
+#
+
+#
+# The typical SNP calling pipeline would  look like the following
+#
+#  Genotyping with samtools --> SNP calling with bcftools
+#
+# If you only have one sample list just one sample.
+#
+samtools mpileup -ugf ~/refs/ebola-1976.fa bwa.bam clc.bam | bcftools call -cv > results.vcf
+
+Unit 10
+Section 13: Genomic intervals.
+
+#
+# Lets install the bedtools pacjage,
+#
+# http://bedtools.readthedocs.org/en/latest/
+
+# Go to the source directoy.
+cd ~/src
+
+# Get the code from its location.
+curl -OL https://github.com/arq5x/bedtools2/releases/download/v2.24.0/bedtools-2.24.0.tar.gz
+
+# Go to the directory
+cd bedtools2
+
+# Make the tools
+make
+
+# Once completed link it to your bin folder
+ln -s ~/src/bedtools2/bin/bedtools ~/bin/bedtools
+
+
+# Run this in the same directory that you have a
+# bam file in.
+samtools view -h bwa.bam | head -3
+
+# the @SQ line will tell us the sequence name and length.
+# We could create a genome file from that.
+
+#
+# Let's create a BED file. That we can visualize.
+#
+
+# Once you have your bed file flank it.
+bedtools flank -i intervals.bed -l 100 -r 0 -g genome.txt > flank.bed
+
+
+# Intersect bam file
+bedtools intersect -a bwa.bam -b intervals.bed > output.bam
+samtools index output.bam
+
+# There are quite a few very interesting features to BedTools.
+# I strongly suggest to work through the tutorials at
+http://quinlanlab.org/tutorials/cshl2014/bedtools.html
+
+Unit 11
+Section 14: Genome Assembly.
+
+#
+# Install velvet
+#
+cd ~/src
+curl -OL https://www.ebi.ac.uk/~zerbino/velvet/velvet_1.2.10.tgz
+tar zxvf velvet_1.2.10.tgz
+cd velvet_1.2.10
+make
+
+# There are two commands that come with velvet that we would want to use.
+# Link them both.
+ln -s ~/src/velvet_1.2.10/velvetg ~/bin/velvetg
+ln -s ~/src/velvet_1.2.10/velveth ~/bin/velveth
+
+# Install QUAST
+cd ~/src
+curl -OL http://downloads.sourceforge.net/project/quast/quast-3.0.tar.gz
+tar zxvf quast-3.0.tar.gz
+
+# Note how we link quast.py to be callsed just quast
+# This way we can change the name of a tool
+ln -s ~/src/quast-3.0/quast.py ~/bin/quast
+
+
+#
+# Go to sec11 and let's try to assemble the EBOLA virus data
+#
+
+# Use hash 31 and put the results into directory d31
+velveth d31 31 -fastq  -short data/trimmed_1P.fq
+
+# Use velvetg to assemble the genome
+# The automatic covertage cutoff computation should produce the ideal paramters
+velvetg d31  -cov_cutoff auto
+
+# But the results above are blatantly wrong. The N50 is 24!!!! that is
+# obviously and blatantly wrong. After all the read lenght is 100bp! Why????
+# That will stay a mystery I am afraid.
+
+#
+# We need to tune velvetg and figure out the right cutoff.
+#
+velvetg d31 -cov_cutoff 5
+velvetg d31 -cov_cutoff 10
+velvetg d31 -cov_cutoff 50
+velvetg d31 -cov_cutoff 100
+
+# Whoa! this last one works really well! N50 of 18
+
+
+# Create an alignment from the contigs that you got.
+# A "shortcut" to create a bam file right out of an alignment.
+bwa mem ~/refs/ebola-1976.fa dx/contigs.fa | samtools view -Sb - | samtools sort -f - out.bam
+samtools index out.bam
+
+# Now visualize the out.bam file with next to the Ebola genome.
+
+Unit 12
+RNA-Seq data analysis
+
+#
+# Let's install the TopHat suite.
+#
+#
+# This suite requires the installation of:
+#
+# 1. Bowtie 2 aligner: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
+# 2. Tophat spliced aligner: http://ccb.jhu.edu/software/tophat/index.shtml
+# 3. Cufflinks differential expression analyzer: http://cole-trapnell-lab.github.io/cufflinks/install/
+
+#
+# Onto the src directory and unleash your installation might.
+#
+# Here I am installing the MacOS versions.
+#
+cd ~/src
+
+# Bowtie 2
+curl -OL http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.5/bowtie2-2.2.5-macos-x86_64.zip
+
+unzip bowtie2-2.2.5-macos-x86_64.zip
+
+# Tophat
+curl -OL https://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.OSX_x86_64.tar.gz
+
+# On Linux
+# curl -OL http://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.Linux_x86_64.tar.gz
+
+tar xzvf tophat-2.1.0.OSX_x86_64.tar.gz
+
+# Cufflinks
+curl -OL http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.OSX_x86_64.tar.gz
+tar zxvf cufflinks-2.2.1.OSX_x86_64.tar.gz
+
+# Linux
+# curl -OL http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz
+# tar zxvf cufflinks-2.2.1.Linux_x86_64.tar.gz
+
+#
+# To enable the tools we need to add them to the export path.
+# Since each tool has many commands it is best if we add the entire folder to the
+# execution path instead of linking each separately.
+#
+export PATH=$PATH:~/src/tophat-2.1.0.OSX_x86_64:~/src/bowtie2-2.2.5:~/src/cufflinks-2.2.1.OSX_x86_64
+
+#
+# You can append this command to the .profile (or .bashrc on linux) to have it applied
+# at all times.
+#
+# echo 'export PATH=$PATH:~/src/tophat-2.1.0.OSX_x86_64:~/src/bowtie2-2.2.5:~/src/cufflinks-2.2.1.OSX_x86_64' >> ~/.profile
+
+#
+# The tools are installed. We now need to prepare the reference datasets.
+# These steps need to be done only once per organism under study.
+#
+# Create an rnaseq data folder.
+#
+mkdir -p ~/edu/sec12
+cd ~/edu/sec12
+
+# We will study a reduced dataset from chromosome 4 of the human genome.
+# Make a directory for chromosome 4 of the human genome.
+mkdir -p ref
+
+
+# Get the Mouse sequence from Ensemble for chromosome 7
+#
+# see: ftp://ftp.ensembl.org/pub/release-77
+#
+curl -L ftp://ftp.ensembl.org/pub/release-77/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.chromosome.7.fa.gz > ref/chr7.fa.gz
+
+# Look at the files.
+ls ref
+
+# Get the annotations
+curl -L ftp://ftp.ensembl.org/pub/release-77/gtf/mus_musculus/Mus_musculus.GRCm38.77.gtf.gz > ref/mm38.gtf.gz
+
+# Look at the files you have.
+ls ref
+
+# Both files are compressed so we need to unpack them
+gunzip ref/*.gz
+
+# Look at the files you have.
+ls ref
+
+
+# We can subselect from the gtf file only the lines that match chromosome 7
+# See what that selects.
+cat ref/mm38.gtf | egrep "^7" | head
+
+# Put the reduced data into a file.
+cat ref/mm38.gtf | egrep "^7" > ref/chr7.gtf
+
+#
+# Export the rnaseq data from the CLC Genomics Workbench run.
+#
+
+#
+# We now have all the tools and references files installed.
+# Onto the actual data analysis.
+#
+
+#
+# If you have trouble with obtaining the data above you
+# can download a prepackaged data that contains the reads and the references.
+#
+#
+# The file size is about 250 MB
+#
+# curl -OL http://www.personal.psu.edu/iua1/courses/files/2015/rnaseq.tar.gz
+#
+# Unpack the dataset.
+#tar zxvf rnaseq.tar.gz
+
+
+# Build the bowtie2 reference for chromosome 7
+# This only needs to be done once and it may take some time depending on the speed of the computer.
+# On my system it took 4 minutes to build the index.
+#
+bowtie2-build ref/chr7.fa ref/chr7
+
+#
+# The data used is from a study reported in http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2868100/
+# In the study the authors considered three types of mouse tissue:
+# embryonic stem cells (ESC), neuronal precursor cells (NPC), and lung fibroblasts (LFB).
+
+# We have four datasets replicated as 2 ESC and 2 NPC datasets
+#
+#
+# Run tophat on each of the datasets
+# This too can take a while. Each run takes 8 minutes on my system.
+# Each run will create a directory with data
+tophat -G ref/chr7.gtf -o esc1 ref/chr7 ESC-1.fastq
+
+#
+# Look inside of the folder ctl1 specified above for all the results created by the tool.
+#
+# Tophat creates a BAM file but does not index it. We have to do that.
+samtools index esc1/accepted_hits.bam
+
+# You can now view this file in IGV.
+
+#
+# Now rerun TopHat for each file.
+#
+# This can be greatly automated with scripts so that you don't have to enter all that information
+# but don't try that too soon.
+#
+# Learn what happens when you run a tool before moving on to automate the process.
+#
+
+#
+# Run the tool on each measurement.
+#
+tophat -G ref/chr7.gtf -o esc2 ref/chr7 ESC-2.fastq
+tophat -G ref/chr7.gtf -o npc1 ref/chr7 NPC-1.fastq
+tophat -G ref/chr7.gtf -o npc2 ref/chr7 NPC-2.fastq
+
+# See all the directories that have been created.
+ls
+
+# For the record here is how we could automate  creating a BAM index for every file
+# that can be found from the current directory. This is optional to run this way, you might
+# as well just invoke the command separately.
+
+#
+# Find every file that ends in .bam then invoke samtools index on this file.
+# For each file separate the commands with ;
+#
+find . -name '*.bam' -exec samtools index '{}' \;
+
+#
+# Cuffdiff performs differential expression studies.
+#
+cuffdiff -o results ref/chr7.gtf esc1/accepted_hits.bam,esc2/accepted_hits.bam npc1/accepted_hits.bam,npc2/accepted_hits.bam
+
+Ubuntu Linux on a Chromebook
+
+It is possible to install Linux on a low cost Chromebook ($239) and thus bypass the need to boot from a USB drive, dual boot or virtualize Linux. This is what you need:
+
+    Get an Intel processor based Chromebook. Choose a model that is known to run Linux. After some research I chose the Acer C720 ChromeBook from Amazon. I picked the 32GB storage version.
+    Linux can be enabled by via a tool named Crouton: Chromium OS Universal Chroot Environment as described at https://github.com/dnschneid/crouton. The installation is an extremely simple three step process.
+    Apply the software setup commands listed below.
+
+Linux setup commands. Check back for changes as we proceed with the course.
+
+# Install a number of required libraries.
+sudo apt-get install -y curl build-essential ncurses-dev byacc zlib1g-dev python-dev git cmake
+
+# Install java and python libraries.
+sudo apt-get install -y unzip default-jre python-pip
+
+# Install the required perl modules.
+sudo perl -MCPAN -e 'install "LWP::Simple"'
+sudo perl -MCPAN -e 'install "HTML::Entities"'
+
+Success!
+ChromeBook Screenshot
+
+Bash Customization
+
+To customize your bash enviroment edit your the file named `.profile` (on a Mac) or `.bashrc` (on Linux). Make sure tab-completion works. Never type full filenames. Instead type them partially then then *tap the *TAB*, if nothing seems to happen double tap TAB to see all options.
+
+export PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ '
+
+# Aliases are a way to invoke more complex
+# On linux use ls='ls -h --color'
+alias ls='ls -hG'
+
+# Safer versions of the default commands.
+alias rm='rm -i'
+alias mv='mv -i'
+alias cp='cp -i'
+
+# Extend the path.
+export PATH=~/bin/:$PATH
+
